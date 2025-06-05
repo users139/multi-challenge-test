@@ -84,7 +84,7 @@ This benchmark can be configured to use your own custom API for response generat
 When using `--model-provider custom_requests` or `--evaluator_model_provider custom_requests`, you'll use `--provider-args` or `--evaluator_provider_args` respectively to pass necessary details for your API. These arguments are key-value pairs:
 
 *   `url=<YOUR_API_ENDPOINT>`: **(Required)** The full URL of your API endpoint.
-*   `model_id=<YOUR_MODEL_IDENTIFIER>`: **(Required)** A name or identifier for the model served by your API. This is included in the request payload.
+*   `model_type=<YOUR_MODEL_IDENTIFIER>`: **(Required)** A name or identifier for the model served by your API. This is included in the request payload. (Formerly `model_id`)
 *   `username=<YOUR_API_USERNAME>`: **(Required)** Username for basic authentication.
 *   `password=<YOUR_API_PASSWORD>`: **(Required)** Password for basic authentication.
 *   `temperature=<float>`: (Optional, default: 0.7) Temperature setting for generation. The value passed here will be automatically converted from string to float.
@@ -100,7 +100,7 @@ When using `--model-provider custom_requests` or `--evaluator_model_provider cus
     ```json
     {
         "prompt": "Your processed prompt content here...",
-        "model_id": "your_model_id",
+        "model_type": "your_model_identifier", // Formerly model_id
         "temperature": 0.75,
         "top_p": 0.7,
         "max_tokens": 1000 // Only if not None
@@ -123,7 +123,7 @@ python main.py \
     --model-provider custom_requests \
     --provider-args \
         url=https://your-api.example.com/generate \
-        model_id=my-custom-model-v1 \
+        model_type=my-custom-model-v1 \
         username=myuser \
         password=mypassword \
         temperature=0.8 \
@@ -158,7 +158,7 @@ python main.py \
     --evaluator_model_provider custom_requests \
     --evaluator_provider_args \
         url=https://your-judge-api.example.com/evaluate \
-        model_id=my-custom-judge-v1 \
+        model_type=my-custom-judge-v1 \
         username=judgeuser \
         password=judgepass \
         temperature=0.1 \
@@ -178,14 +178,14 @@ python main.py \
     --model-provider custom_requests \
     --provider-args \
         url=https://your-generation-api.example.com/generate \
-        model_id=my-generation-model \
+        model_type=my-generation-model \
         username=gen_user \
         password=gen_pass \
         temperature=0.9 \
     --evaluator_model_provider custom_requests \
     --evaluator_provider_args \
         url=https://your-evaluation-api.example.com/evaluate \
-        model_id=my-evaluation-model \
+        model_type=my-evaluation-model \
         username=eval_user \
         password=eval_pass \
         temperature=0.2 \

@@ -4,7 +4,7 @@ from src.models.base import ModelProvider  # Assuming this path is correct
 from typing import Any, List, Dict, Optional # For type hinting
 
 class CustomRequestsModel(ModelProvider):
-    def __init__(self, url: str, model_id: str, username: str, password: str,
+    def __init__(self, url: str, model_type: str, username: str, password: str,
                  temperature: Any = 0.7,  # Default to a float, but expect string from factory
                  max_tokens: Any = None,   # Default to None, expect string or None
                  top_p: Any = 1.0,         # Default to a float, but expect string from factory
@@ -13,7 +13,7 @@ class CustomRequestsModel(ModelProvider):
                  evaluation_mode: Any = False # Default to bool, expect string from factory
                  ):
         self.url = url
-        self.model_id = model_id
+        self.model_type = model_type # Renamed from model_id
         self.username = username
         self.password = password
 
@@ -85,7 +85,7 @@ class CustomRequestsModel(ModelProvider):
 
         payload = {
             "prompt": actual_prompt_text,
-            "model_id": self.model_id,
+            "model_type": self.model_type, # Renamed from model_id
             "temperature": self.temperature,
             "top_p": self.top_p,
         }
@@ -141,7 +141,7 @@ class CustomRequestsModel(ModelProvider):
 
 
     def __str__(self) -> str:
-        return f"CustomRequestsModel(url='{self.url}', model_id='{self.model_id}', evaluation_mode={self.evaluation_mode})"
+        return f"CustomRequestsModel(url='{self.url}', model_type='{self.model_type}', evaluation_mode={self.evaluation_mode})" # Renamed from model_id
 
     def __repr__(self) -> str:
         return self.__str__()
