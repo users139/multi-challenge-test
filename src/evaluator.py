@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Tuple, Any, Literal
+from typing import List, Dict, Tuple, Any, Literal, Optional
 from src.models.openai import OpenAIModel
+from src.models.factory import ModelFactory # Added import
 from tqdm import tqdm
 
 class JudgeResponse(BaseModel):
@@ -24,24 +25,78 @@ The criteria that the model response must meet is as follows. Be VERY STRICT!:
 Print your reasoning followed by your verdict, either "YES" or "NO".'''
 
 class Evaluator:
-    def __init__(self, conversations: List[Any], responses: Dict[int, List[str]]):
+    def __init__(self,
+                 conversations: List[Any],
+                 responses: Dict[int, List[str]],
+                 evaluator_model_provider_name: Optional[str] = None,
+                 evaluator_model_args: Optional[Dict] = None
+                 ):
         self.conversations = conversations
         self.responses = responses
-        self.evaluation_model = OpenAIModel(
-            model="gpt-4o-2024-08-06", 
-            temp=0, 
-            max_tokens=4096,
-            response_format=JudgeResponse
-        )
         self.results = []
+
+        if evaluator_model_provider_name:
+            model_args_for_factory = evaluator_model_args.copy() if evaluator_model_args else {}
+            model_args_for_factory['evaluation_mode'] = True # Ensure evaluation mode for custom models
+            # Potentially, some models might not want 'evaluation_mode' if they don't support it.
+            # ModelFactory or the model's __init__ should handle extra/unexpected kwargs gracefully.
+            try:
+                self.evaluation_model = ModelFactory.get_provider(
+                    evaluator_model_provider_name,
+                    **model_args_for_factory
+                )
+            except Exception as e:
+                print(f"Error initializing custom evaluator model '{evaluator_model_provider_name}' with args {model_args_for_factory}: {e}")
+                print("Falling back to default OpenAI evaluator model.")
+                # Fallback to default if custom model initialization fails
+                self.evaluation_model = OpenAIModel(
+                    model="gpt-4o-2024-08-06",
+                    temp=0,
+                    max_tokens=4096,
+                    response_format=JudgeResponse  # OpenAIModel expects this for structured output
+                )
+        else:
+            # Default to OpenAI model if no provider is specified
+            self.evaluation_model = OpenAIModel(
+                model="gpt-4o-2024-08-06",
+                temp=0,
+                max_tokens=4096,
+                response_format=JudgeResponse # OpenAIModel expects this for structured output
+            )
 
     def evaluate_helper(self, i: int, conversation: Any, response: str) -> Tuple[int, str, str, str, str]:
         """Evaluate a single response."""
         target_question = conversation.target_question
         pass_criteria = conversation.pass_criteria
         prompt = JUDGE_PROMPT.format(response, target_question)
-        judgement = self.evaluation_model.generate([{"role": "user", "content": prompt}])
-        return i, conversation.axis, judgement.reasoning, judgement.verdict, pass_criteria
+
+        # Generate judgement. This might be a string or a JudgeResponse object.
+        judgement_output = self.evaluation_model.generate([{"role": "user", "content": prompt}])
+
+        parsed_judgement: JudgeResponse
+        if isinstance(judgement_output, str):
+            try:
+                # Attempt to parse the string as JudgeResponse JSON
+                parsed_judgement = JudgeResponse.parse_raw(judgement_output)
+            except Exception as e:
+                print(f"Error parsing judgement string: '{judgement_output}'. Error: {e}")
+                # Fallback to a default 'NO' verdict with error information
+                parsed_judgement = JudgeResponse(
+                    reasoning=f"Failed to parse model output string. Error: {e}. Original output: {judgement_output[:200]}...",
+                    verdict="NO"
+                )
+        elif isinstance(judgement_output, JudgeResponse):
+            # If it's already a JudgeResponse object (e.g., from OpenAIModel with response_format)
+            parsed_judgement = judgement_output
+        else:
+            # Handle unexpected type
+            print(f"Unexpected judgement type: {type(judgement_output)}. Content: {judgement_output}")
+            parsed_judgement = JudgeResponse(
+                reasoning=f"Unexpected judgement type: {type(judgement_output)}. Content: {str(judgement_output)[:200]}...",
+                verdict="NO"
+            )
+
+        return i, conversation.axis, parsed_judgement.reasoning, parsed_judgement.verdict, pass_criteria
 
     def evaluate(self, max_workers:int = 1) -> List[Dict]:
         """Evaluate all responses for each conversation"""

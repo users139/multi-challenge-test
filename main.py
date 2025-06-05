@@ -37,6 +37,12 @@ def main():
     parser.add_argument('--raw', type=str,
                         help="Path to save detailed raw output including all responses and evaluations")
 
+    # Arguments for configurable evaluator model
+    parser.add_argument('--evaluator_model_provider', type=str,
+                        help="Specify the model provider for evaluation. Defaults to OpenAI if not provided.")
+    parser.add_argument('--evaluator_provider_args', type=str, nargs='*',
+                        help="Provider-specific arguments for the evaluator model in key=value format.")
+
     args = parser.parse_args()
 
     # Validate the --raw argument
@@ -65,7 +71,16 @@ def main():
     responses = data_loader.get_responses()
     conversations = data_loader.get_conversations()
 
-    evaluator = Evaluator(conversations, responses)
+    # Prepare evaluator configuration
+    evaluator_provider_name = args.evaluator_model_provider
+    evaluator_custom_args = parse_provider_args(args.evaluator_provider_args)
+
+    evaluator = Evaluator(
+        conversations,
+        responses,
+        evaluator_model_provider_name=evaluator_provider_name, # New argument for Evaluator
+        evaluator_model_args=evaluator_custom_args  # New argument for Evaluator
+    )
     evaluation_results = evaluator.evaluate(max_workers=args.max_workers_eval)
 
     parser = ResultParser(evaluation_results)
