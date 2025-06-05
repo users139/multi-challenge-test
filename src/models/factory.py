@@ -1,4 +1,5 @@
 from src.models.base import ModelProvider
+from src.models.custom_requests import CustomRequestsModel
 from src.models.huggingface import HuggingFaceModel
 from src.models.openai import OpenAIModel
 from typing import Dict, Type
@@ -11,6 +12,7 @@ class ModelFactory:
     providers: Dict[str, Type[ModelProvider]] = {
         'huggingface': HuggingFaceModel,
         'openai': OpenAIModel,
+        'custom_requests': CustomRequestsModel,
     }
 
     @classmethod
