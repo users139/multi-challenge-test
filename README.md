@@ -194,6 +194,11 @@ python main.py \
     --raw results/full_custom_pipeline_raw.csv
 ```
 
+#### Alternative: Simplified Custom API Testing with Hardcoded Settings
+For users who prefer to test a specific custom API setup without using command-line arguments for API parameters, a separate script is available at `custom_api_eval_tool/run_custom_eval.py`.
+This script performs a similar workflow (data loading, response generation, evaluation, and scoring) but requires you to directly edit its Python file to set API URLs, credentials, model types, and other parameters.
+Please refer to the comments and structure within `custom_api_eval_tool/run_custom_eval.py` for configuration details. It uses its own `requirements.txt` located in the `custom_api_eval_tool/` directory for its specific dependencies (`requests` and `tqdm`).
+
 ## **Project Dependencies**
 See `requirements.txt` for a complete list of required packages.
 ---
